@@ -1,32 +1,52 @@
 <?php
 
-// Set headers to allow cross-origin requests (CORS) from any domain.
-// This is important if your frontend is hosted on a different domain than your PHP backend.
-header("Access-Control-Allow-Origin: *");
+// A list of all allowed origins.
+// You can add as many domains as you need to this array.
+$allowed_origins = array(
+    'http://localhost:8080', // Your local development server
+    'https://my-production-site.com', // Example of a production domain
+    'https://another-trusted-site.net' // Another trusted site
+);
+
+// Get the origin of the current request.
+$request_origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+
+// Check if the request origin is in our list of allowed origins.
+if (in_array($request_origin, $allowed_origins)) {
+    // If it is, set the Access-Control-Allow-Origin header to the specific origin.
+    header("Access-Control-Allow-Origin: $request_origin");
+} else {
+    // If the origin is not in the allowed list, you can optionally exit
+    // or handle the error here. For this case, we'll let the script continue,
+    // and the CORS header simply won't be set, which will block the request.
+    // However, the best practice is to exit with a 403 Forbidden response.
+    // For this example, we'll just continue and let the browser handle it.
+}
+
+// All other CORS headers are still important for preflight requests.
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST, OPTIONS"); // Include OPTIONS for preflight
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// Check if the request method is POST
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get the raw POST data, which should be a JSON string from the frontend.
-    $data = file_get_contents("php://input");
+// Handle the preflight OPTIONS request first.
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200); // Respond with 200 OK
+    exit(); // Stop script execution
+}
 
-    // Decode the JSON data into a PHP associative array.
+// Check if the request method is POST.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = file_get_contents("php://input");
     $request_data = json_decode($data, true);
 
-    // Validate if the required fields 'base' and 'height' exist and are numeric.
     if (isset($request_data['base']) && is_numeric($request_data['base']) &&
         isset($request_data['height']) && is_numeric($request_data['height'])) {
         
         $base = $request_data['base'];
         $height = $request_data['height'];
-
-        // Calculate the area of the triangle.
         $area = ($base * $height) / 2;
 
-        // Prepare a successful JSON response.
         http_response_code(200); // OK
         echo json_encode(array(
             "success" => true,
@@ -34,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             "area" => $area
         ));
     } else {
-        // If data is missing or invalid, prepare an error response.
         http_response_code(400); // Bad Request
         echo json_encode(array(
             "success" => false,
@@ -42,11 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         ));
     }
 } else {
-    // If the request method is not POST, prepare an error response.
     http_response_code(405); // Method Not Allowed
     echo json_encode(array(
         "success" => false,
-        "message" => "Method not allowed. Only POST requests are accepted."
+        "message" => "Method not allowed. Only POST and OPTIONS requests are accepted."
     ));
 }
-
+?>
