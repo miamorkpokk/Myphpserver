@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: php-server-calculator
+    plan: free
+    runtime: docker
+    buildCommand: "composer install --no-dev"
+    rootDir: "."
