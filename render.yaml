@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: php-server-calculator
+    name: Myphpserver
     plan: free
     runtime: docker
     buildCommand: "composer install --no-dev"
